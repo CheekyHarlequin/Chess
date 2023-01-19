@@ -21,7 +21,7 @@ void play();
 void normalBoard();
 void gameplay();
 void terminate();
-void drawText(SDL_Renderer* renderer, int x, int y, char* text, TTF_Font** font, SDL_Color* color);
+void drawText(SDL_Renderer* renderer, const int x, const int y, const char* text, TTF_Font** font, const SDL_Color* color);
 
 //The board
 char pieceFilePaths[32][3] = { "bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR", "bP", "bP", "bP",
@@ -83,13 +83,14 @@ void normalBoard() {
 
 	SDL_Texture* boardTex = SDL_CreateTextureFromSurface(renderer, surface);
 
+	SDL_FreeSurface(surface);
+
 	SDL_QueryTexture(boardTex, NULL, NULL, &boardrect.w, &boardrect.h);
 
 	//resize and change pos of the board rect.
 	boardrect.w, boardrect.h = BOARD_SIZE;
 	boardrect.x, boardrect.y = 0;
 
-	SDL_FreeSurface(surface);
 	SDL_RenderCopy(renderer, boardTex, NULL, &boardrect);
 
 	SDL_Texture* pieceTex;
@@ -125,7 +126,7 @@ void normalBoard() {
 
 void gameplay() {}
 
-void drawText(SDL_Renderer* renderer, int x, int y, char* text, TTF_Font** font, SDL_Color* textColor) {
+void drawText(SDL_Renderer* renderer, const int x, const int y, const char* text, TTF_Font** font, const SDL_Color* textColor) {
 	const SDL_Color defaultColor = { 0, 0, 0, 0 };
 
 	//Draw with the according color
