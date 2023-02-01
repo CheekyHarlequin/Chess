@@ -1,37 +1,47 @@
-#include <SDL2/SDL.h>
-#include <SDL2/SDL_image.h>
-#include <SDL2/SDL_keyboard.h>
-#include <SDL2/SDL_mouse.h>
-#include <SDL2/SDL_timer.h>
-#include <SDL2/SDL_ttf.h>
-#include <stdio.h>
-#include <string.h>
+#include "chess.h"
 
-//Sizes in pixels
-#define PIECE_SIZE 100
-#define BOARD_SIZE 1000
-#define WINDOW_SIZE 1000
+//Forward declarations
 
 SDL_Renderer* renderer;
 SDL_Window* window;
 TTF_Font* defaultFont;
+struct Piece pieces[PIECE_COUNT];
 
-//Forward declarations
-void play();
-void normalBoard();
-void gameplay();
-void terminate();
-void drawText(SDL_Renderer* renderer, const int x, const int y, const char* text, TTF_Font** font, const SDL_Color* color);
+void loadPieces() {
 
-//The board
-char pieceFilePaths[32][3] = { "bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR", "bP", "bP", "bP",
-															 "bP", "bP", "bP", "bP", "bP", "wP", "wP", "wP", "wP", "wP", "wP",
-															 "wP", "wP", "wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR" };
+	//Name the pieces accordingly
 
-struct SDL_Rect piecerects[32];
+	const char defaultBoard[PIECE_COUNT] = {
+		'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
+		'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'K', 'Q', 'B', 'N', 'R',
+	};
+
+	for (int i = 0; i < PIECE_COUNT; i++) {
+		pieces[i].name[0] = (i < 16) ? 'b' : 'w';
+		pieces[i].name[1] = defaultBoard[i];
+	}
+
+	//Load the textures
+	for (int i = 0; i < PIECE_COUNT; i++) {
+		//Create the full path
+		char path[32] = { "textures/" };
+		strcat(path, pieces[i].name);
+		strcat(path, ".png");
+		//Load onto surface
+		SDL_Surface* surface = IMG_Load(path);
+
+		//Texture time
+		pieces[i].texture = SDL_CreateTextureFromSurface(renderer, surface);
+
+		SDL_FreeSurface(surface);
+
+		//Set the sizes
+		pieces[i].rect.w = PIECE_SIZE, pieces[i].rect.h = PIECE_SIZE;
+	}
+}
 
 int main() {
-	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER)) {
+	if (SDL_Init(SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_AUDIO)) {
 		printf("Error: %s\n", SDL_GetError());
 		exit(0);
 	}
@@ -47,103 +57,24 @@ int main() {
 		terminate();
 	}
 
-	play();
+	start();
+	terminate();
+}
 
-	drawText(renderer, 500, 350, "Aomgus", NULL, NULL);
-
-	SDL_RenderPresent(renderer);
-
-	SDL_Delay(3000);
-
+//every important function will got here
+void start() {
+	loadPieces();
+	normalBoard();
+	gameplay();
 	terminate();
 }
 
 void terminate() {
+
+	SDL_Delay(4000);
 	SDL_DestroyRenderer(renderer);
 	SDL_DestroyWindow(window);
 
 	SDL_Quit();
-
 	exit(0);
-}
-
-void play() {
-	normalBoard();
-	gameplay();
-}
-
-//NormalBoard sets Board to default including Pieces
-void normalBoard() {
-	SDL_Surface* surface;
-
-	//Draw the board
-	SDL_Rect boardrect;
-
-	surface = IMG_Load("textures/Chess.jpg");
-
-	SDL_Texture* boardTex = SDL_CreateTextureFromSurface(renderer, surface);
-
-	SDL_FreeSurface(surface);
-
-	SDL_QueryTexture(boardTex, NULL, NULL, &boardrect.w, &boardrect.h);
-
-	//resize and change pos of the board rect.
-	boardrect.w, boardrect.h = BOARD_SIZE;
-	boardrect.x, boardrect.y = 0;
-
-	SDL_RenderCopy(renderer, boardTex, NULL, &boardrect);
-
-	SDL_Texture* pieceTex;
-
-	for (int i = 0, counter = 1; i < 32; i++, counter = ((counter >= 8) ? 1 : counter + 1)) {
-		char path[32] = { "textures/" };
-		strcat(path, pieceFilePaths[i]);
-		strcat(path, ".png");
-
-		surface = IMG_Load(path);
-
-		pieceTex = SDL_CreateTextureFromSurface(renderer, surface);
-
-		SDL_QueryTexture(pieceTex, NULL, NULL, &piecerects[i].w, &piecerects[i].h);
-
-		piecerects[i].w = PIECE_SIZE, piecerects[i].h = PIECE_SIZE;
-
-		if (i < 16) {
-			piecerects[i].x = (100 * counter);
-			piecerects[i].y = ((i < 8) ? 100 : 200);
-		} else {
-			piecerects[i].x = (100 * counter);
-			piecerects[i].y = ((i < 24) ? 700 : 800);
-		}
-
-		SDL_FreeSurface(surface);
-		SDL_RenderCopy(renderer, pieceTex, NULL, &piecerects[i]);
-		SDL_DestroyTexture(pieceTex);
-	}
-
-	SDL_DestroyTexture(boardTex);
-}
-
-void gameplay() {}
-
-void drawText(SDL_Renderer* renderer, const int x, const int y, const char* text, TTF_Font** font, const SDL_Color* textColor) {
-	const SDL_Color defaultColor = { 0, 0, 0, 0 };
-
-	//Draw with the according color
-	SDL_Surface* surface =
-		TTF_RenderText_Solid((font == NULL) ? defaultFont : *font, text, (textColor == NULL) ? defaultColor : *textColor);
-
-	//Draw to texture
-	SDL_Texture* texture = SDL_CreateTextureFromSurface(renderer, surface);
-
-	SDL_FreeSurface(surface);
-
-	//Adjust position
-	SDL_Rect textRect;
-
-	SDL_QueryTexture(texture, NULL, NULL, &textRect.w, &textRect.h);
-
-	textRect.x = x, textRect.y = y;
-
-	SDL_RenderCopy(renderer, texture, NULL, &textRect);
 }
