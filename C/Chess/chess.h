@@ -6,6 +6,7 @@
 #include <SDL2/SDL_mouse.h>
 #include <SDL2/SDL_timer.h>
 #include <SDL2/SDL_ttf.h>
+#include <math.h>
 #include <stdbool.h>
 #include <stdio.h>
 #include <string.h>
@@ -14,6 +15,9 @@
 #define PIECE_SIZE 100
 #define BOARD_SIZE 1000
 #define WINDOW_SIZE 1000
+
+#define BOARD_X_OFFSET 100
+#define BOARD_Y_OFFSET 100
 
 //Number of pieces
 #define PIECE_COUNT 32
@@ -26,11 +30,12 @@ extern SDL_Window* window;
 extern TTF_Font* defaultFont;
 
 extern SDL_Texture* pieceTextures[UNIQUE_PIECE_COUNT];
-extern SDL_Texture* boardTexture;
+extern SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture;
 
 struct Piece {
 	char name[2];
 	SDL_Rect rect;
+	bool dead;
 };
 
 extern SDL_Rect boardRect;
@@ -38,13 +43,17 @@ extern SDL_Rect boardRect;
 extern struct Piece pieces[PIECE_COUNT];
 extern uint16_t pawnBits; //Which pawns have been moved
 
+extern struct Piece* currentlyHeldPiece;
+
+extern int startX, startY, endX, endY;
+
 void start();
 void initBoard();
 void gameplay();
 void terminate();
 
-void handleInput(bool whois);
-void isMoveValid(int startX, int startY, int endX, int endY, char* piece);
+void handleInput(bool* whois);
+bool isMoveValid(int startX, int startY, int endX, int endY, char* piece);
 int getWinner();
 
 void loadTextures();

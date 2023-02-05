@@ -1,13 +1,36 @@
 #include "chess.h"
 
 SDL_Texture* pieceTextures[UNIQUE_PIECE_COUNT];
-SDL_Texture* boardTexture;
+SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture;
 
 void render() {
 	SDL_RenderCopy(renderer, boardTexture, NULL, &boardRect);
 
 	for (int i = 0; i < PIECE_COUNT; i++) {
-		SDL_RenderCopy(renderer, pieceTextures[getPieceTextureIndex(pieces[i].name)], NULL, &pieces[i].rect);
+		if (!pieces[i].dead) {
+			SDL_RenderCopy(renderer, pieceTextures[getPieceTextureIndex(pieces[i].name)], NULL, &pieces[i].rect);
+		}
+	}
+
+	if (currentlyHeldPiece == NULL) {
+		return;
+	}
+
+	SDL_Rect highlightRect = { .x = startX - 4, .y = startY - 4, .w = PIECE_SIZE, .h = PIECE_SIZE };
+
+	SDL_RenderCopy(renderer, highlightTexture, NULL, &highlightRect);
+
+	for (int i = 0; i < 64; i++) {
+		highlightRect.x = (i % 8) * PIECE_SIZE + BOARD_X_OFFSET;
+		highlightRect.y = floor((i - (i % 8)) / 8) * PIECE_SIZE + BOARD_Y_OFFSET;
+
+		if (isMoveValid(startX, startY, highlightRect.x, highlightRect.y, currentlyHeldPiece->name)) {
+			//TODO: wtf??
+			highlightRect.x -= 4;
+			highlightRect.y -= 4;
+
+			SDL_RenderCopy(renderer, highlightDotTexture, NULL, &highlightRect);
+		}
 	}
 }
 
@@ -38,12 +61,23 @@ void drawText(SDL_Renderer* renderer,
 	SDL_RenderCopy(renderer, texture, NULL, &textRect);
 }
 
-void loadTextures() {
-	SDL_Surface* surface = IMG_Load("textures/board.png");
+SDL_Texture* loadTexture(char* path) {
+	SDL_Texture* texPtr;
 
-	boardTexture = SDL_CreateTextureFromSurface(renderer, surface);
+	SDL_Surface* surface = IMG_Load(path);
+
+	texPtr = SDL_CreateTextureFromSurface(renderer, surface);
 
 	SDL_FreeSurface(surface);
+
+	return texPtr;
+}
+
+void loadTextures() {
+	boardTexture = loadTexture("textures/board.png");
+
+	highlightTexture = loadTexture("textures/highlight.png");
+	highlightDotTexture = loadTexture("textures/highlight-dot.png");
 
 	//Load the textures for the pieces
 	const char loadingSeq[] = { 'R', 'N', 'B', 'Q', 'K', 'P' };
@@ -59,12 +93,7 @@ void loadTextures() {
 		strcat(path, pieceID);
 		strcat(path, ".png");
 
-		//Load onto surface
-		surface = IMG_Load(path);
-
 		//Texture time
-		pieceTextures[getPieceTextureIndex(pieceID)] = SDL_CreateTextureFromSurface(renderer, surface);
-
-		SDL_FreeSurface(surface);
+		pieceTextures[getPieceTextureIndex(pieceID)] = loadTexture(path);
 	}
 }
