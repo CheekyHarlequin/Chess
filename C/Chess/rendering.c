@@ -1,23 +1,13 @@
 #include "chess.h"
 
+SDL_Texture* pieceTextures[UNIQUE_PIECE_COUNT];
+SDL_Texture* boardTexture;
 
-void renderBoard() {
-
-  SDL_Rect boardrect;
-
-	SDL_Surface* surface = IMG_Load("textures/Chess.jpg");
-
-	SDL_Texture* boardTex = SDL_CreateTextureFromSurface(renderer, surface);
-
-	SDL_FreeSurface(surface);
-
-	boardrect.w = BOARD_SIZE, boardrect.h = BOARD_SIZE;
-	boardrect.x = 0, boardrect.y = 0;
-
-	SDL_RenderCopy(renderer, boardTex, NULL, &boardrect);
+void render() {
+	SDL_RenderCopy(renderer, boardTexture, NULL, &boardRect);
 
 	for (int i = 0; i < PIECE_COUNT; i++) {
-		SDL_RenderCopy(renderer, pieces[i].texture, NULL, &pieces[i].rect);
+		SDL_RenderCopy(renderer, pieceTextures[getPieceTextureIndex(pieces[i].name)], NULL, &pieces[i].rect);
 	}
 }
 
@@ -48,12 +38,33 @@ void drawText(SDL_Renderer* renderer,
 	SDL_RenderCopy(renderer, texture, NULL, &textRect);
 }
 
-void normalBoard() {
-	//Draw the board
+void loadTextures() {
+	SDL_Surface* surface = IMG_Load("textures/board.png");
 
-	for (int i = 0; i < PIECE_COUNT; i++) {
-		//Now place it on the right positions
-		pieces[i].rect.x = (100 * (i % 8)) + 100;
-		pieces[i].rect.y = ((i / 8) + (i >= 16) * 4) * 100 + 100;
+	boardTexture = SDL_CreateTextureFromSurface(renderer, surface);
+
+	SDL_FreeSurface(surface);
+
+	//Load the textures for the pieces
+	const char loadingSeq[] = { 'R', 'N', 'B', 'Q', 'K', 'P' };
+	for (int i = 0; i < UNIQUE_PIECE_COUNT; i++) {
+		//Create the full path
+		char path[32] = { "textures/" };
+
+		//Texture id
+		char pieceID[3] = { 0 };
+		pieceID[0] = i < 6 ? 'w' : 'b';
+		pieceID[1] = loadingSeq[i % (UNIQUE_PIECE_COUNT / 2)];
+
+		strcat(path, pieceID);
+		strcat(path, ".png");
+
+		//Load onto surface
+		surface = IMG_Load(path);
+
+		//Texture time
+		pieceTextures[getPieceTextureIndex(pieceID)] = SDL_CreateTextureFromSurface(renderer, surface);
+
+		SDL_FreeSurface(surface);
 	}
 }
