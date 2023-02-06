@@ -44,8 +44,10 @@ extern struct Piece pieces[PIECE_COUNT];
 extern uint16_t pawnBits; //Which pawns have been moved
 
 extern struct Piece* currentlyHeldPiece;
+extern struct Piece* lastPieceW;
+extern struct Piece* lastPieceB;
 
-extern int startX, startY, endX, endY;
+extern int startX, startY, endX, endY, lastPawnDiff;
 
 void start();
 void initBoard();

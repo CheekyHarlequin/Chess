@@ -6,6 +6,9 @@ uint16_t pawnBits;
 struct Piece pieces[PIECE_COUNT];
 
 struct Piece* currentlyHeldPiece = NULL;
+struct Piece* lastPieceW = NULL;
+struct Piece* lastPieceB = NULL;
+int lastPawnDiff = 0;
 
 void gameplay() {
 	SDL_Color col = { 0, 0, 255 };
@@ -74,7 +77,6 @@ void handleInput(bool* whois) {
 						*whois = !*whois;
 
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
-
 						if (nomPiece != NULL) {
 							nomPiece->dead = true;
 						}
@@ -85,6 +87,11 @@ void handleInput(bool* whois) {
 
 					currentlyHeldPiece->rect.x = endX;
 					currentlyHeldPiece->rect.y = endY;
+					if (getPieceOnPos(endX, endY)->name[0] == 'w') {
+						lastPieceW = getPieceOnPos(endX, endY);
+					} else {
+						lastPieceB = getPieceOnPos(endX, endY);
+					}
 
 					currentlyHeldPiece = NULL;
 
@@ -128,6 +135,9 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 		case 'N':
 			return (pow((startX - endX), 2) + pow((startY - endY), 2) == 5 * PIECE_SIZE * PIECE_SIZE);
 			break;
+
+
+
 		case 'B':
 			if (abs(endX - startX) == abs(endY - startY)) {
 				int tempX = startX, tempY = startY;
@@ -143,6 +153,9 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 				return false;
 			}
 			break;
+
+
+
 		case 'R':
 			if ((endX != startX && endY == startY) || (endX == startX && endY != startY)) {
 				int tempX = startX, tempY = startY;
@@ -171,6 +184,9 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 				return false;
 			}
 			break;
+
+
+
 		case 'Q':
 			char pieceID[2];
 			pieceID[0] = piece[0];
@@ -183,22 +199,70 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 
 			return bishop || rook;
 			break;
+
+
+
 		case 'K':
 			return (abs(startX - endX) <= PIECE_SIZE && abs(startY - endY) <= PIECE_SIZE);
 			break;
+
+
+
 		case 'P':
-			/*
-			Bauer:
-			posto - posnow = quotient
-			if relatively positive and eq 2 check if going to x or x2
-			if diagonal check for a piece, if to front same but !
-			we need to store the last move made for highlighting it or checking for en passant
-			if last move diff is on the coord of jump + type is pawn take it
-			if arrived at either x11 or x12 show ui for piece picking
-			overwrite piece texture?
-			*/
-			//for pawns: (pawnBitfield >> n) & 1U
-			return true;
+			//#TODO wrong movement and en passand bug
+			//For normal movement of Pawn
+			if (startX == endX) {
+				if (piece[0] == 'w' && startY > endY && getPieceOnPos(startX, endY) == NULL) {
+					if ((startY - endY) == 200) {
+						lastPawnDiff = 200;
+					}
+					return (endY == 500) ? true : (startY - endY == 100);
+				} else if (piece[0] == 'b' && startY < endY && getPieceOnPos(startX, endY) == NULL) {
+					if ((endY - startY) == 200) {
+						lastPawnDiff = 200;
+					}
+					return (endY == 400) ? true : (startY - endY == -100);
+				}
+			}
+			//For kicking pieces #TODO un pasand
+			else if (getPieceOnPos(startX + 100, endY) != NULL && endX - startX == 100) {
+				if (piece[0] == 'w') {
+					// en passend
+					if(getPieceOnPos(startX +100,startY)==lastPieceB&&lastPawnDiff==200){
+						return true;
+					}
+					//normal kick
+					else
+					if (startY - endY == 100) {
+						return true;
+					}
+
+				} else if (piece[0] == 'b') {
+					// en passend
+
+					//normal kick
+					if (endY - startY == 100) {
+						return true;
+					}
+				}
+			} else if (getPieceOnPos(startX - 100, endY) != NULL && startX - endX == 100) {
+				if (piece[0] == 'w') {
+					// en passend
+
+					//normal kick
+					if (startY - endY == 100) {
+						return true;
+					}
+				} else if (piece[0] == 'b') {
+					// en passend
+
+					//normal kick
+					if (endY - startY == 100) {
+						return true;
+					}
+				}
+			}
+
 			break;
 		default:
 			return true;
