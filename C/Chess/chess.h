@@ -43,7 +43,7 @@ extern SDL_Rect boardRect;
 extern struct Piece pieces[PIECE_COUNT];
 extern uint16_t pawnBits; //Which pawns have been moved
 
-extern struct Piece *currentlyHeldPiece, *lastPiece;
+extern struct Piece *currentlyHeldPiece, lastPiece;
 
 extern int startX, startY, endX, endY, lastPawnDiff;
 
@@ -53,7 +53,7 @@ void gameplay();
 void terminate();
 
 void handleInput(bool* whois);
-bool isMoveValid(int startX, int startY, int endX, int endY, char* piece);
+int isMoveValid(int startX, int startY, int endX, int endY, char* piece);
 int getWinner();
 
 void loadTextures();

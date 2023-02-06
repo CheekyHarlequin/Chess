@@ -5,7 +5,7 @@ SDL_Rect boardRect;
 uint16_t pawnBits;
 struct Piece pieces[PIECE_COUNT];
 
-struct Piece *currentlyHeldPiece = NULL, *lastPieceW = NULL;
+struct Piece *currentlyHeldPiece = NULL, lastPiece;
 int lastPawnDiff = 0;
 
 void gameplay() {
@@ -66,18 +66,34 @@ void handleInput(bool* whois) {
 				SDL_RenderPresent(renderer);
 
 				break;
+
+
+
 			case SDL_MOUSEBUTTONUP:
 				if (event.button.button == SDL_BUTTON_LEFT && currentlyHeldPiece != NULL) {
 					endX = getRoundedPosition(event.button.x);
 					endY = getRoundedPosition(event.button.y);
-
-					if (isMoveValid(startX, startY, endX, endY, currentlyHeldPiece->name)) {
+					int result = isMoveValid(startX, startY, endX, endY, currentlyHeldPiece->name);
+					if (result) {
 						*whois = !*whois;
 
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
 						if (nomPiece != NULL) {
 							nomPiece->dead = true;
 						}
+						if(result==2)
+						{
+							if(lastPiece.name[1]=='P')
+							{
+								getPieceOnPos(lastPiece.rect.x,lastPiece.rect.y)->dead = true;
+							}
+						}
+						lastPiece.rect.x = endX;
+						lastPiece.rect.y = endY;
+						lastPiece.name[1] = currentlyHeldPiece->name[1];
+						lastPawnDiff = abs(startY-endY);
+
+
 					} else {
 						endX = startX;
 						endY = startY;
@@ -86,7 +102,6 @@ void handleInput(bool* whois) {
 					currentlyHeldPiece->rect.x = endX;
 					currentlyHeldPiece->rect.y = endY;
 
-					lastPiece = getPieceOnPos(endX, endY);
 
 					currentlyHeldPiece = NULL;
 
@@ -110,7 +125,7 @@ void handleInput(bool* whois) {
 	}
 }
 
-bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
+int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 	struct Piece* endPiecePtr = getPieceOnPos(endX, endY);
 
 	if (endPiecePtr != NULL && endPiecePtr->name[0] == piece[0]) {
@@ -194,27 +209,33 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 			break;
 
 		case 'P':
-			//#TODO wrong movement and en passand bug
+			bool isInRightDirection = (piece[0] == 'w') ? (startY > endY) : (startY < endY);
+
+			if (!isInRightDirection) {
+				return false;
+			}
+
 			//For normal movement of Pawn
 			if (startX == endX) {
-				if (piece[0] == 'w' && startY > endY && getPieceOnPos(startX, endY) == NULL) {
-
-					lastPawnDiff = abs(startY - endY);
+				if (piece[0] == 'w' && getPieceOnPos(startX, endY) == NULL) {
 					return (endY == 500) ? true : (startY - endY == 100);
-				}
-
-				else if (piece[0] == 'b' && startY < endY && getPieceOnPos(startX, endY) == NULL) {
-					lastPawnDiff = abs(startY - endY);
+				} else if (piece[0] == 'b' && getPieceOnPos(startX, endY) == NULL) {
 					return (endY == 400) ? true : (startY - endY == -100);
 				}
 			}
 
 			//For killing pieces
 			else if (abs(startY - endY) == 100 && abs(startX - endX) == 100) {
-				bool isKill = ((startX + 100 == endX) && getPieceOnPos(startX + 100, endY) != NULL) ||
-											((startX - 100 == endX) && getPieceOnPos(startX - 100, endY) != NULL);
-				bool isEnPassent = false;
+                int dirX = (startX + 100 == endX) ? (startX + 100) : (startX - 100);
 
+				bool isKill = (getPieceOnPos(dirX, endY) != NULL);
+
+				bool isEnPassent = (lastPawnDiff == 200)
+				&& (lastPiece.rect.x == dirX) && (lastPiece.rect.y == startY)
+				&& (lastPiece.name[1] == 'P');
+				if(isEnPassent){
+					return 2;
+				}
 				if (isKill || isEnPassent) {
 					return true;
 				}
