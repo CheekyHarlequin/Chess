@@ -43,9 +43,7 @@ extern SDL_Rect boardRect;
 extern struct Piece pieces[PIECE_COUNT];
 extern uint16_t pawnBits; //Which pawns have been moved
 
-extern struct Piece* currentlyHeldPiece;
-extern struct Piece* lastPieceW;
-extern struct Piece* lastPieceB;
+extern struct Piece *currentlyHeldPiece, *lastPiece;
 
 extern int startX, startY, endX, endY, lastPawnDiff;
 
