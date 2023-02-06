@@ -89,7 +89,7 @@ void handleInput(bool* whois) {
 					currentlyHeldPiece->rect.y = endY;
 					if (getPieceOnPos(endX, endY)->name[0] == 'w') {
 						lastPieceW = getPieceOnPos(endX, endY);
-					} else {
+					} else if (getPieceOnPos(endX, endY)->name[0] == 'b') {
 						lastPieceB = getPieceOnPos(endX, endY);
 					}
 
@@ -224,11 +224,29 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 					return (endY == 400) ? true : (startY - endY == -100);
 				}
 			}
+
+
+			else if(
+				getPieceOnPos(startX+100,startY+100)== NULL
+			||getPieceOnPos(startX-100,startY+100)== NULL
+			||getPieceOnPos(startX+100,startY-100)== NULL
+			||getPieceOnPos(startX-100,startY-100)== NULL){
+				return true;
+
+			}
+
+
 			//For kicking pieces #TODO un pasand
-			else if (getPieceOnPos(startX + 100, endY) != NULL && endX - startX == 100) {
+			/*else if ((abs(endY-startY)<=100&&abs(startX-endX)<=100)
+			&&(getPieceOnPos(startX + 100, endY) != NULL
+			||getPieceOnPos(startX-100, endY)!=NULL)
+			&& (endX - startX == 100||startX - endX==100)) {
+
 				if (piece[0] == 'w') {
 					// en passend
-					if(getPieceOnPos(startX +100,startY)==lastPieceB&&lastPawnDiff==200){
+					if(getPieceOnPos(startX -100,startY)==lastPieceB
+					||getPieceOnPos(startX +100,startY)==lastPieceB
+					&&lastPawnDiff==200){
 						return true;
 					}
 					//normal kick
@@ -245,7 +263,7 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 						return true;
 					}
 				}
-			} else if (getPieceOnPos(startX - 100, endY) != NULL && startX - endX == 100) {
+			}*/ /*else if (getPieceOnPos(startX - 100, endY) != NULL && startX - endX == 100) {
 				if (piece[0] == 'w') {
 					// en passend
 
@@ -261,7 +279,7 @@ bool isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 						return true;
 					}
 				}
-			}
+			}*/
 
 			break;
 		default:
