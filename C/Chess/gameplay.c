@@ -13,8 +13,8 @@ void gameplay() {
 
 	render();
 
-	drawText(renderer, 500, 400, "First player will start", NULL, &col);
-	drawText(renderer, 500, 500, "Please select a piece to move", NULL, &col);
+	drawText(renderer, 5 * PIECE_SIZE, 4 * PIECE_SIZE, "First player will start", NULL, &col);
+	drawText(renderer, 5 * PIECE_SIZE, 5 * PIECE_SIZE, "Please select a piece to move", NULL, &col);
 
 	SDL_RenderPresent(renderer);
 
@@ -67,8 +67,6 @@ void handleInput(bool* whois) {
 
 				break;
 
-
-
 			case SDL_MOUSEBUTTONUP:
 				if (event.button.button == SDL_BUTTON_LEFT && currentlyHeldPiece != NULL) {
 					endX = getRoundedPosition(event.button.x);
@@ -81,18 +79,15 @@ void handleInput(bool* whois) {
 						if (nomPiece != NULL) {
 							nomPiece->dead = true;
 						}
-						if(result==2)
-						{
-							if(lastPiece.name[1]=='P')
-							{
-								getPieceOnPos(lastPiece.rect.x,lastPiece.rect.y)->dead = true;
+						if (result == 2) {
+							if (lastPiece.name[1] == 'P') {
+								getPieceOnPos(lastPiece.rect.x, lastPiece.rect.y)->dead = true;
 							}
 						}
 						lastPiece.rect.x = endX;
 						lastPiece.rect.y = endY;
 						lastPiece.name[1] = currentlyHeldPiece->name[1];
-						lastPawnDiff = abs(startY-endY);
-
+						lastPawnDiff = abs(startY - endY);
 
 					} else {
 						endX = startX;
@@ -101,7 +96,6 @@ void handleInput(bool* whois) {
 
 					currentlyHeldPiece->rect.x = endX;
 					currentlyHeldPiece->rect.y = endY;
-
 
 					currentlyHeldPiece = NULL;
 
@@ -218,22 +212,21 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 			//For normal movement of Pawn
 			if (startX == endX) {
 				if (piece[0] == 'w' && getPieceOnPos(startX, endY) == NULL) {
-					return (endY == 500) ? true : (startY - endY == 100);
+					return (endY == PIECE_SIZE * 5) ? true : (startY - endY == PIECE_SIZE);
 				} else if (piece[0] == 'b' && getPieceOnPos(startX, endY) == NULL) {
-					return (endY == 400) ? true : (startY - endY == -100);
+					return (endY == PIECE_SIZE * 4) ? true : (startY - endY == -PIECE_SIZE);
 				}
 			}
 
 			//For killing pieces
-			else if (abs(startY - endY) == 100 && abs(startX - endX) == 100) {
-                int dirX = (startX + 100 == endX) ? (startX + 100) : (startX - 100);
+			else if (abs(startY - endY) == PIECE_SIZE && abs(startX - endX) == PIECE_SIZE) {
+				int dirX = (startX + PIECE_SIZE == endX) ? (startX + PIECE_SIZE) : (startX - PIECE_SIZE);
 
 				bool isKill = (getPieceOnPos(dirX, endY) != NULL);
 
-				bool isEnPassent = (lastPawnDiff == 200)
-				&& (lastPiece.rect.x == dirX) && (lastPiece.rect.y == startY)
-				&& (lastPiece.name[1] == 'P');
-				if(isEnPassent){
+				bool isEnPassent = (lastPawnDiff == PIECE_SIZE * 2) && (lastPiece.rect.x == dirX) &&
+													 (lastPiece.rect.y == startY) && (lastPiece.name[1] == 'P');
+				if (isEnPassent) {
 					return 2;
 				}
 				if (isKill || isEnPassent) {
@@ -264,8 +257,8 @@ void initBoard() {
 		pieces[i].name[1] = defaultBoard[i];
 
 		//Position them
-		pieces[i].rect.x = (100 * (i % 8)) + BOARD_X_OFFSET;
-		pieces[i].rect.y = ((i / 8) + (i >= 16) * 4) * 100 + BOARD_Y_OFFSET;
+		pieces[i].rect.x = (PIECE_SIZE * (i % 8)) + BOARD_X_OFFSET;
+		pieces[i].rect.y = ((i / 8) + (i >= 16) * 4) * PIECE_SIZE + BOARD_Y_OFFSET;
 
 		//Set the sizes
 		pieces[i].rect.w = PIECE_SIZE, pieces[i].rect.h = PIECE_SIZE;

@@ -16,7 +16,7 @@ void render() {
 		return;
 	}
 
-	SDL_Rect highlightRect = { .x = startX - 4, .y = startY - 4, .w = PIECE_SIZE, .h = PIECE_SIZE };
+	SDL_Rect highlightRect = { .x = startX - 0, .y = startY - 0, .w = PIECE_SIZE, .h = PIECE_SIZE };
 
 	SDL_RenderCopy(renderer, highlightTexture, NULL, &highlightRect);
 
@@ -25,9 +25,9 @@ void render() {
 		highlightRect.y = floor((i - (i % 8)) / 8) * PIECE_SIZE + BOARD_Y_OFFSET;
 
 		if (isMoveValid(startX, startY, highlightRect.x, highlightRect.y, currentlyHeldPiece->name)) {
-			//TODO: wtf??
-			highlightRect.x -= 4;
-			highlightRect.y -= 4;
+			//????
+			highlightRect.x -= 4 * WINDOW_SIZE / 1000;
+			highlightRect.y -= 4 * WINDOW_SIZE / 1000;
 
 			SDL_RenderCopy(renderer, highlightDotTexture, NULL, &highlightRect);
 		}

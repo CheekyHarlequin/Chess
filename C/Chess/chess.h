@@ -12,12 +12,13 @@
 #include <string.h>
 
 //Sizes in pixels
-#define PIECE_SIZE 100
-#define BOARD_SIZE 1000
-#define WINDOW_SIZE 1000
+#define WINDOW_SIZE 500
 
-#define BOARD_X_OFFSET 100
-#define BOARD_Y_OFFSET 100
+#define PIECE_SIZE (WINDOW_SIZE / 10)
+#define BOARD_SIZE WINDOW_SIZE
+
+#define BOARD_X_OFFSET PIECE_SIZE
+#define BOARD_Y_OFFSET PIECE_SIZE
 
 //Number of pieces
 #define PIECE_COUNT 32
