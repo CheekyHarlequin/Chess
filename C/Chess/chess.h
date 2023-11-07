@@ -12,7 +12,7 @@
 #include <string.h>
 
 //Sizes in pixels
-#define WINDOW_SIZE 500
+#define WINDOW_SIZE 1000
 
 #define PIECE_SIZE (WINDOW_SIZE / 10)
 #define BOARD_SIZE WINDOW_SIZE
@@ -31,16 +31,17 @@ extern SDL_Window* window;
 extern TTF_Font* defaultFont;
 
 extern SDL_Texture* pieceTextures[UNIQUE_PIECE_COUNT];
-extern SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture;
+extern SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture, *pawnPromotionBackground;
 
 struct Piece {
 	char name[2];
 	SDL_Rect rect;
 	bool dead;
+	bool wasmoved;
 };
 
-extern SDL_Rect boardRect;
-
+extern SDL_Rect boardRect, pPBackground;
+extern SDL_Rect promotePiecesRect[4];
 extern struct Piece pieces[PIECE_COUNT];
 extern uint16_t pawnBits; //Which pawns have been moved
 
@@ -48,13 +49,20 @@ extern struct Piece *currentlyHeldPiece, lastPiece;
 
 extern int startX, startY, endX, endY, lastPawnDiff;
 
+extern bool pawnPromoting;
+
+extern bool whois;
+
+extern bool isButtondown;
+
 void start();
 void initBoard();
 void gameplay();
 void terminate();
 
-void handleInput(bool* whois);
-int isMoveValid(int startX, int startY, int endX, int endY, char* piece);
+void promotePawn(char toWhatPromoteTo);
+void handleInput();
+int isMoveValid(int startX, int startY, int endX, int endY);
 int getWinner();
 
 void loadTextures();

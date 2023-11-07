@@ -38,6 +38,7 @@ void terminate() {
 	SDL_DestroyTexture(boardTexture);
 	SDL_DestroyTexture(highlightTexture);
 	SDL_DestroyTexture(highlightDotTexture);
+	SDL_DestroyTexture(pawnPromotionBackground);
 
 	for (int i = 0; i < UNIQUE_PIECE_COUNT; i++) {
 		SDL_DestroyTexture(pieceTextures[i]);

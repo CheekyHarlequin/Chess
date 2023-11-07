@@ -1,12 +1,17 @@
 #include "chess.h"
 
-SDL_Rect boardRect;
+SDL_Rect boardRect, pPBackground;
+SDL_Rect promotePiecesRect[4];
 
 uint16_t pawnBits;
-struct Piece pieces[PIECE_COUNT];
+struct Piece pieces[PIECE_COUNT] = { 0 };
 
 struct Piece *currentlyHeldPiece = NULL, lastPiece;
 int lastPawnDiff = 0;
+
+bool pawnPromoting = false;
+bool whois;
+bool isButtondown = false;
 
 void gameplay() {
 	SDL_Color col = { 0, 0, 255 };
@@ -18,8 +23,9 @@ void gameplay() {
 
 	SDL_RenderPresent(renderer);
 
-	for (bool whois = 0; !getWinner();) {
-		handleInput(&whois);
+	// whois 0 for white; 1 for black
+	for (whois = 0; !getWinner();) {
+		handleInput();
 		SDL_Delay(10);
 	}
 }
@@ -39,7 +45,7 @@ struct Piece* getPieceOnPos(int x, int y) {
 }
 
 int startX = 0, startY = 0, endX = 0, endY = 0;
-void handleInput(bool* whois) {
+void handleInput() {
 	//Piece movement handling
 	for (SDL_Event event; SDL_PollEvent(&event);) {
 		switch (event.type) {
@@ -47,10 +53,49 @@ void handleInput(bool* whois) {
 				if (event.button.button != SDL_BUTTON_LEFT) {
 					continue;
 				}
+				if (pawnPromoting) {
+					if (getRoundedPosition(event.button.y) == whois ? BOARD_Y_OFFSET : BOARD_Y_OFFSET * 8) {
+						/*
+						X-Positions for Pawn Promotions:
+						Rook BOARD_X_OFFSET*3
+						Knight BOARD_X_OFFSET*4
+						Bishop BOARD_X_OFFSET*5
+						Queen BOARD_X_OFFSET*6
+						*/
+						if (getRoundedPosition(event.button.x) >= (BOARD_X_OFFSET * 3) &&
+								getRoundedPosition(event.button.x) < (BOARD_X_OFFSET * 7)) {
+							switch (getRoundedPosition(event.button.x)) {
+								case BOARD_X_OFFSET * 3:
+									promotePawn('R');
+									break;
+								case BOARD_X_OFFSET * 4:
+									promotePawn('N');
+									break;
+								case BOARD_X_OFFSET * 5:
+									promotePawn('B');
+									break;
+								case BOARD_X_OFFSET * 6:
+									promotePawn('Q');
+									break;
+							}
+						} else {
+							continue;
+						}
+					} else {
+						continue;
+					}
+
+					pawnPromoting = false;
+
+					render();
+					SDL_RenderPresent(renderer);
+
+					continue;
+				}
 
 				currentlyHeldPiece = getPieceOnPos(event.button.x, event.button.y);
 
-				if (currentlyHeldPiece == NULL || (currentlyHeldPiece->name[0] == 'b') != *whois) {
+				if (currentlyHeldPiece == NULL || (currentlyHeldPiece->name[0] == 'b') != whois) {
 					currentlyHeldPiece = NULL;
 
 					return;
@@ -71,23 +116,43 @@ void handleInput(bool* whois) {
 				if (event.button.button == SDL_BUTTON_LEFT && currentlyHeldPiece != NULL) {
 					endX = getRoundedPosition(event.button.x);
 					endY = getRoundedPosition(event.button.y);
-					int result = isMoveValid(startX, startY, endX, endY, currentlyHeldPiece->name);
-					if (result) {
-						*whois = !*whois;
+					int result = isMoveValid(startX, startY, endX, endY);
 
+					if (result) {
+
+						whois = !whois;
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
 						if (nomPiece != NULL) {
 							nomPiece->dead = true;
+							printf("dead\n");
 						}
+
+						// Rochade
+						currentlyHeldPiece->wasmoved = true;
+
+						// left Rochade
+						if (result == 3) {
+							getPieceOnPos(PIECE_SIZE, startY)->rect.x = (PIECE_SIZE * 4);
+						}
+						// right Rochade
+						else if (result == 4) {
+							getPieceOnPos((PIECE_SIZE * 8), startY)->rect.x = (PIECE_SIZE * 6);
+						}
+
 						if (result == 2) {
 							if (lastPiece.name[1] == 'P') {
+								
 								getPieceOnPos(lastPiece.rect.x, lastPiece.rect.y)->dead = true;
 							}
 						}
+
 						lastPiece.rect.x = endX;
 						lastPiece.rect.y = endY;
 						lastPiece.name[1] = currentlyHeldPiece->name[1];
 						lastPawnDiff = abs(startY - endY);
+
+						if (lastPiece.name[1] == 'P' && whois ? endY == PIECE_SIZE : endY == (PIECE_SIZE * 8))
+							pawnPromoting = true;
 
 					} else {
 						endX = startX;
@@ -98,7 +163,6 @@ void handleInput(bool* whois) {
 					currentlyHeldPiece->rect.y = endY;
 
 					currentlyHeldPiece = NULL;
-
 					render();
 					SDL_RenderPresent(renderer);
 				}
@@ -119,10 +183,10 @@ void handleInput(bool* whois) {
 	}
 }
 
-int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
+int isMoveValid(int startX, int startY, int endX, int endY) {
 	struct Piece* endPiecePtr = getPieceOnPos(endX, endY);
 
-	if (endPiecePtr != NULL && endPiecePtr->name[0] == piece[0]) {
+	if (endPiecePtr != NULL && endPiecePtr->name[0] == currentlyHeldPiece->name[0]) {
 		return false;
 	}
 
@@ -135,7 +199,7 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 		return false;
 	}
 
-	switch (piece[1]) {
+	switch (currentlyHeldPiece->name[1]) {
 		case 'N':
 			return (pow((startX - endX), 2) + pow((startY - endY), 2) == 5 * PIECE_SIZE * PIECE_SIZE);
 			break;
@@ -176,7 +240,7 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 					}
 
 					if (piecePtr != NULL) {
-						piecesPierced += (piecePtr->name[0] != piece[0]) ? 1 : 2;
+						piecesPierced += (piecePtr->name[0] != currentlyHeldPiece->name[0]) ? 1 : 2;
 					}
 				}
 				return true;
@@ -186,24 +250,60 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 			break;
 
 		case 'Q':
-			char pieceID[2];
-			pieceID[0] = piece[0];
+			currentlyHeldPiece->name[1] = 'B';
+			bool bishop = isMoveValid(startX, startY, endX, endY);
 
-			pieceID[1] = 'B';
-			bool bishop = isMoveValid(startX, startY, endX, endY, pieceID);
+			currentlyHeldPiece->name[1] = 'R';
+			bool rook = isMoveValid(startX, startY, endX, endY);
 
-			pieceID[1] = 'R';
-			bool rook = isMoveValid(startX, startY, endX, endY, pieceID);
+			currentlyHeldPiece->name[1] = 'Q';
 
 			return bishop || rook;
 			break;
 
 		case 'K':
+			// #TODO
+			// Control if endX is on the Rochade pos for King
+			//For Rochade:
+
+			if (currentlyHeldPiece->wasmoved == false) {
+				if (endX == PIECE_SIZE * 3 && endY == startY && getPieceOnPos(PIECE_SIZE, startY) != NULL &&
+						getPieceOnPos(PIECE_SIZE, startY)->wasmoved == false) {
+
+					char countCaseA;
+					for (countCaseA = 2; countCaseA < 6; countCaseA++) {
+						if ((startX - (PIECE_SIZE * countCaseA)) == PIECE_SIZE) {
+							// For Rochade to the left
+							return 3;
+						}
+						if (getPieceOnPos(startX - (PIECE_SIZE * countCaseA), startY) != NULL) {
+							break;
+						}
+					}
+				}
+				if (endX == PIECE_SIZE * 7 && endY == startY && getPieceOnPos(PIECE_SIZE * 8, startY) != NULL &&
+						getPieceOnPos(PIECE_SIZE * 8, startY)->wasmoved == false) {
+
+					char countCaseB;
+					for (countCaseB = 2; countCaseB < 6; countCaseB++) {
+						if ((startX + (PIECE_SIZE * countCaseB)) == (PIECE_SIZE * 8)) {
+							// for Rochade to the right
+							return 4;
+						}
+						if (getPieceOnPos(startX + (PIECE_SIZE * countCaseB), startY) != NULL) {
+							break;
+						}
+					}
+				}
+			}
+			// für Kontrolle: printf("StartX: %d \n StartY: %d \n",startX, startY);
+
 			return (abs(startX - endX) <= PIECE_SIZE && abs(startY - endY) <= PIECE_SIZE);
+
 			break;
 
 		case 'P':
-			bool isInRightDirection = (piece[0] == 'w') ? (startY > endY) : (startY < endY);
+			bool isInRightDirection = (currentlyHeldPiece->name[0] == 'w') ? (startY > endY) : (startY < endY);
 
 			if (!isInRightDirection) {
 				return false;
@@ -211,9 +311,9 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 
 			//For normal movement of Pawn
 			if (startX == endX) {
-				if (piece[0] == 'w' && getPieceOnPos(startX, endY) == NULL) {
+				if (currentlyHeldPiece->name[0] == 'w' && getPieceOnPos(startX, endY) == NULL) {
 					return (endY == PIECE_SIZE * 5) ? true : (startY - endY == PIECE_SIZE);
-				} else if (piece[0] == 'b' && getPieceOnPos(startX, endY) == NULL) {
+				} else if (currentlyHeldPiece->name[0] == 'b' && getPieceOnPos(startX, endY) == NULL) {
 					return (endY == PIECE_SIZE * 4) ? true : (startY - endY == -PIECE_SIZE);
 				}
 			}
@@ -229,9 +329,7 @@ int isMoveValid(int startX, int startY, int endX, int endY, char* piece) {
 				if (isEnPassent) {
 					return 2;
 				}
-				if (isKill || isEnPassent) {
-					return true;
-				}
+				return isKill;
 			}
 			return false;
 			break;
@@ -247,7 +345,7 @@ void initBoard() {
 
 	//The board's initial setup
 	const char defaultBoard[PIECE_COUNT] = {
-		'R', 'N', 'B', 'K', 'Q', 'B', 'N', 'R', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
+		'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P',
 		'P', 'P', 'P', 'P', 'P', 'P', 'P', 'P', 'R', 'N', 'B', 'Q', 'K', 'B', 'N', 'R',
 	};
 
@@ -262,10 +360,22 @@ void initBoard() {
 
 		//Set the sizes
 		pieces[i].rect.w = PIECE_SIZE, pieces[i].rect.h = PIECE_SIZE;
+
+		//pawnPromoting Background:
+
+		pPBackground.w = PIECE_SIZE * 5;
+		pPBackground.h = PIECE_SIZE * 2;
+		for (char i = 0; i < 4; i++) {
+			promotePiecesRect[i].x = ((PIECE_SIZE * 3) + (PIECE_SIZE * i));
+			promotePiecesRect[i].w = PIECE_SIZE;
+			promotePiecesRect[i].h = PIECE_SIZE;
+		}
 	}
 }
-
+void promotePawn(char toWhatPromoteTo) {
+	getPieceOnPos(lastPiece.rect.x, lastPiece.rect.y)->name[1] = toWhatPromoteTo;
+}
 //0 for none, 1 for white 2 for black
 int getWinner() {
-	return (pieces[3].dead) + (pieces[28].dead) * 2;
+	return (pieces[4].dead) + (pieces[28].dead) * 2;
 }

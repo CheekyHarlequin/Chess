@@ -1,7 +1,7 @@
 #include "chess.h"
 
 SDL_Texture* pieceTextures[UNIQUE_PIECE_COUNT];
-SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture;
+SDL_Texture *boardTexture, *highlightTexture, *highlightDotTexture, *pawnPromotionBackground;
 
 void render() {
 	SDL_RenderCopy(renderer, boardTexture, NULL, &boardRect);
@@ -11,7 +11,23 @@ void render() {
 			SDL_RenderCopy(renderer, pieceTextures[getPieceTextureIndex(pieces[i].name)], NULL, &pieces[i].rect);
 		}
 	}
+	if (pawnPromoting) {
+		printf("test\n");
+		pPBackground.x = ((PIECE_SIZE * 2) + (PIECE_SIZE / 2));
+		pPBackground.y = (whois ? (PIECE_SIZE - (PIECE_SIZE / 2)) : ((PIECE_SIZE * 8) - (PIECE_SIZE / 2)));
+		SDL_RenderCopy(renderer, pawnPromotionBackground, NULL, &pPBackground);
 
+		const char possiblePromotions[] = { 'R', 'N', 'B', 'Q' };
+
+		for (char i = 0; i < 4; i++) {
+			promotePiecesRect[i].y = (PIECE_SIZE * (whois ? 1 : 8));
+			char promotePieceTextures[2];
+			promotePieceTextures[0] = whois ? 'w' : 'b';
+			promotePieceTextures[1] = possiblePromotions[i];
+
+			SDL_RenderCopy(renderer, pieceTextures[getPieceTextureIndex(promotePieceTextures)], NULL, &promotePiecesRect[i]);
+		}
+	}
 	if (currentlyHeldPiece == NULL) {
 		return;
 	}
@@ -24,7 +40,7 @@ void render() {
 		highlightRect.x = (i % 8) * PIECE_SIZE + BOARD_X_OFFSET;
 		highlightRect.y = floor((i - (i % 8)) / 8) * PIECE_SIZE + BOARD_Y_OFFSET;
 
-		if (isMoveValid(startX, startY, highlightRect.x, highlightRect.y, currentlyHeldPiece->name)) {
+		if (isMoveValid(startX, startY, highlightRect.x, highlightRect.y)) {
 			//????
 			highlightRect.x -= 4 * WINDOW_SIZE / 1000;
 			highlightRect.y -= 4 * WINDOW_SIZE / 1000;
@@ -75,9 +91,9 @@ SDL_Texture* loadTexture(char* path) {
 
 void loadTextures() {
 	boardTexture = loadTexture("textures/board.png");
-
 	highlightTexture = loadTexture("textures/highlight.png");
 	highlightDotTexture = loadTexture("textures/highlight-dot.png");
+	pawnPromotionBackground = loadTexture("textures/pawnpromotionbackground.png");
 
 	//Load the textures for the pieces
 	const char loadingSeq[] = { 'R', 'N', 'B', 'Q', 'K', 'P' };
