@@ -55,6 +55,8 @@ extern bool whois;
 
 extern bool isButtondown;
 
+extern bool threatahead;
+
 void start();
 void initBoard();
 void gameplay();
@@ -64,6 +66,8 @@ void promotePawn(char toWhatPromoteTo);
 void handleInput();
 int isMoveValid(int startX, int startY, int endX, int endY);
 int getWinner();
+
+bool threattest(bool validcheck);
 
 void loadTextures();
 void render();

@@ -9,6 +9,7 @@ struct Piece pieces[PIECE_COUNT] = { 0 };
 struct Piece *currentlyHeldPiece = NULL, lastPiece;
 int lastPawnDiff = 0;
 
+bool threatahead = false;
 bool pawnPromoting = false;
 bool whois;
 bool isButtondown = false;
@@ -100,6 +101,9 @@ void handleInput() {
 
 					return;
 				}
+				if (threattest(false) && currentlyHeldPiece != (whois ? &pieces[4] : &pieces[28])) {
+					continue;
+				}
 
 				startX = currentlyHeldPiece->rect.x;
 				startY = currentlyHeldPiece->rect.y;
@@ -118,13 +122,12 @@ void handleInput() {
 					endY = getRoundedPosition(event.button.y);
 					int result = isMoveValid(startX, startY, endX, endY);
 
-					if (result) {
+					if (result && !threattest(true)) {
 
 						whois = !whois;
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
 						if (nomPiece != NULL) {
 							nomPiece->dead = true;
-							printf("dead\n");
 						}
 
 						// Rochade
@@ -141,7 +144,7 @@ void handleInput() {
 
 						if (result == 2) {
 							if (lastPiece.name[1] == 'P') {
-								
+
 								getPieceOnPos(lastPiece.rect.x, lastPiece.rect.y)->dead = true;
 							}
 						}
@@ -201,7 +204,7 @@ int isMoveValid(int startX, int startY, int endX, int endY) {
 
 	switch (currentlyHeldPiece->name[1]) {
 		case 'N':
-			return (pow((startX - endX), 2) + pow((startY - endY), 2) == 5 * PIECE_SIZE * PIECE_SIZE);
+			return ((pow((startX - endX), 2) + pow((startY - endY), 2) == 5 * PIECE_SIZE * PIECE_SIZE));
 			break;
 
 		case 'B':
@@ -372,6 +375,39 @@ void initBoard() {
 		}
 	}
 }
+
+/*
+		#TODO : ?
+
+
+		Checks if King is in danger, validcheck does nothing more than changing the
+		"dead"-status of "currentlyHeldPiece"
+*/
+bool threattest(bool validcheck) {
+	currentlyHeldPiece->dead = validcheck;
+	currentlyHeldPiece->name[0] = (whois) ? 'w' : 'b';
+
+	char whichenemy = (whois ? 16 : 0);
+	char myKing = (whois ? 4 : 28);
+	bool gothit = false;
+
+	for (char i = 0; i < 16; i++) {
+
+		if (!pieces[i + whichenemy].dead &&
+				isMoveValid(
+					pieces[i + whichenemy].rect.x, pieces[i + whichenemy].rect.y,
+					pieces[myKing].rect.x, pieces[myKing].rect.y)) {
+			gothit = true;
+			break;
+		}
+	}
+
+	currentlyHeldPiece->dead = false;
+	currentlyHeldPiece->name[0] = (whois) ? 'b' : 'w';
+
+	return gothit;
+}
+
 void promotePawn(char toWhatPromoteTo) {
 	getPieceOnPos(lastPiece.rect.x, lastPiece.rect.y)->name[1] = toWhatPromoteTo;
 }
