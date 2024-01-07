@@ -101,7 +101,10 @@ void handleInput() {
 
 					return;
 				}
-				if (threattest(false) && currentlyHeldPiece != (whois ? &pieces[4] : &pieces[28])) {
+
+				//TODO: this check doesn't make any sense
+				//Will the king be in check if the piece remains where it is? If so, unless we are trying to move the king, don't let the piece move
+				if (isKingThreatened(false) && currentlyHeldPiece != (whois ? &pieces[4] : &pieces[28])) {
 					continue;
 				}
 
@@ -122,8 +125,8 @@ void handleInput() {
 					endY = getRoundedPosition(event.button.y);
 					int result = isMoveValid(startX, startY, endX, endY);
 
-					if (result && !threattest(true)) {
-
+					//The king won't be threatened if we move the piece here
+					if (result && !isKingThreatened(true)) {
 						whois = !whois;
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
 						if (nomPiece != NULL) {
@@ -376,27 +379,20 @@ void initBoard() {
 	}
 }
 
-/*
-		#TODO : ?
-
-
-		Checks if King is in danger, validcheck does nothing more than changing the
-		"dead"-status of "currentlyHeldPiece"
-*/
-bool threattest(bool validcheck) {
-	currentlyHeldPiece->dead = validcheck;
+bool isKingThreatened(bool pretendTheCurrentlyHeldPieceIsGone) {
+	currentlyHeldPiece->dead = pretendTheCurrentlyHeldPieceIsGone;
 	currentlyHeldPiece->name[0] = (whois) ? 'w' : 'b';
 
 	char whichenemy = (whois ? 16 : 0);
 	char myKing = (whois ? 4 : 28);
+
 	bool gothit = false;
 
 	for (char i = 0; i < 16; i++) {
 
 		if (!pieces[i + whichenemy].dead &&
 				isMoveValid(
-					pieces[i + whichenemy].rect.x, pieces[i + whichenemy].rect.y,
-					pieces[myKing].rect.x, pieces[myKing].rect.y)) {
+					pieces[i + whichenemy].rect.x, pieces[i + whichenemy].rect.y, pieces[myKing].rect.x, pieces[myKing].rect.y)) {
 			gothit = true;
 			break;
 		}

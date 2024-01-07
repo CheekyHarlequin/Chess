@@ -67,7 +67,7 @@ void handleInput();
 int isMoveValid(int startX, int startY, int endX, int endY);
 int getWinner();
 
-bool threattest(bool validcheck);
+bool isKingThreatened(bool pretendTheCurrentlyHeldPieceIsGone);
 
 void loadTextures();
 void render();
