@@ -104,9 +104,11 @@ void handleInput() {
 
 				//TODO: this check doesn't make any sense
 				//Will the king be in check if the piece remains where it is? If so, unless we are trying to move the king, don't let the piece move
+				/*
 				if (isKingThreatened(false) && currentlyHeldPiece != (whois ? &pieces[4] : &pieces[28])) {
 					continue;
 				}
+				*/
 
 				startX = currentlyHeldPiece->rect.x;
 				startY = currentlyHeldPiece->rect.y;
@@ -126,7 +128,7 @@ void handleInput() {
 					int result = isMoveValid(startX, startY, endX, endY);
 
 					//The king won't be threatened if we move the piece here
-					if (result && !isKingThreatened(true)) {
+					if (result /*&& !isKingThreatened(endX, endY)*/) {
 						whois = !whois;
 						struct Piece* nomPiece = getPieceOnPos(endX, endY);
 						if (nomPiece != NULL) {
@@ -379,9 +381,10 @@ void initBoard() {
 	}
 }
 
-bool isKingThreatened(bool pretendTheCurrentlyHeldPieceIsGone) {
-	currentlyHeldPiece->dead = pretendTheCurrentlyHeldPieceIsGone;
-	currentlyHeldPiece->name[0] = (whois) ? 'w' : 'b';
+bool isKingThreatened(int endX, int endY) {
+
+	currentlyHeldPiece->rect.x = endX;
+	currentlyHeldPiece->rect.y = endY;
 
 	char whichenemy = (whois ? 16 : 0);
 	char myKing = (whois ? 4 : 28);
